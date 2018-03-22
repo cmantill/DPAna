@@ -19,6 +19,8 @@ c.Print(outfilename+".pdf[")
 
 
 def make_effplots():
+    hitcut = "abs(({0})-({1}))<2".format(bar_var,barexp_var) # require hit in the extrapolated bar or the adjacent bar
+
     events.Draw("{0}:{1}>>hexp2d({2},{3})".format(y_var,x_var,x_binning,y_binning),"","colz");
     c.Print(outfilename+".pdf");
 
@@ -49,16 +51,25 @@ def make_effplots():
         c.Print(outfilename+".pdf");
         '''
 
-        events.Draw(bar_var+">>hhits_exp(60,-0.5,59.5)",quadcut+" && "+fiducialcuts,"");
-        #c.Print(outfilename+".pdf");
-        events.Draw(bar_var+">>hhits(60,-0.5,59.5)",quadcut+" && "+fiducialcuts+" && "+hitcut,"");
-        #c.Print(outfilename+".pdf");
+        events.Draw(barexp_var+">>hhits_exp(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts]),"");
+        events.Draw(barexp_var+">>hhits(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts,hitcut]),"");
         numerator = gDirectory.Get("hhits")
         denominator = gDirectory.Get("hhits_exp")
         numerator.Sumw2();
         numerator.Divide(denominator)
         numerator.GetYaxis().SetRangeUser(0,1.1)
-        numerator.SetTitle("efficiency vs. bar, {0}, quad {1};bar ID;efficiency".format(station,quad))
+        numerator.SetTitle("efficiency vs. bar, {0}, quad {1};extrapolated bar ID;efficiency".format(station,quad))
+        numerator.Draw();
+        c.Print(outfilename+".pdf");
+
+        events.Draw(barexp_var+">>hhits_exp(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts]),"");
+        events.Draw(bar_var+">>hhits(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts,hitcut]),"");
+        numerator = gDirectory.Get("hhits")
+        denominator = gDirectory.Get("hhits_exp")
+        numerator.Sumw2();
+        numerator.Divide(denominator)
+        numerator.GetYaxis().SetRangeUser(0,1.1)
+        numerator.SetTitle("efficiency vs. bar, {0}, quad {1};hit bar ID;efficiency".format(station,quad))
         numerator.Draw();
         c.Print(outfilename+".pdf");
 
@@ -93,9 +104,9 @@ def make_effplots():
         c.Print(outfilename+".pdf");
         '''
 
-        events.Draw(flipped_y+">>hy_exp({0})".format(flipped_y_binning),quadcut+" && "+fiducialcut_x,"");
+        events.Draw(flipped_y+">>hy_exp({0})".format(flipped_y_binning)," && ".join([quadcut,fiducialcut_x]),"");
         #c.Print(outfilename+".pdf");
-        events.Draw(flipped_y+">>hy({0})".format(flipped_y_binning),quadcut+" && "+fiducialcut_x+" && "+hitcut,"");
+        events.Draw(flipped_y+">>hy({0})".format(flipped_y_binning)," && ".join([quadcut,fiducialcut_x,hitcut]),"");
         #c.Print(outfilename+".pdf");
         numerator = gDirectory.Get("hy")
         denominator = gDirectory.Get("hy_exp")
@@ -111,7 +122,7 @@ def make_effplots():
 
         events.Draw("{0}:{1}>>hexp2d({2},{3})".format(y_var,x_var,x_binning,y_binning),quadcut,"colz");
         c.Print(outfilename+".pdf");
-        events.Draw("{0}:{1}>>hexp2d_withhit({2},{3})".format(y_var,x_var,x_binning,y_binning),quadcut+" && "+hitcut,"colz");
+        events.Draw("{0}:{1}>>hexp2d_withhit({2},{3})".format(y_var,x_var,x_binning,y_binning)," && ".join([quadcut,hitcut]),"colz");
         c.Print(outfilename+".pdf");
         numerator = gDirectory.Get("hexp2d_withhit")
         denominator = gDirectory.Get("hexp2d")
@@ -142,8 +153,8 @@ xedge = [-2.0, 2.0, -2.0, 2.0]
 x_var = "(tx*797+x0)"
 y_var = "(ty*797+y0)"
 
-bar_var = "fElementID_exp-1"
-hitcut = "abs(fElementID-fElementID_exp+1)<2" # require hit in the extrapolated bar or the adjacent bar
+bar_var = "fElementID"
+barexp_var = "fElementID_exp-1"
 
 make_effplots()
 
@@ -152,14 +163,14 @@ x_binning = "200,-100,100"
 y_binning = "1200,-120,120"
 flipped_y_binning = "1200,0,120"
 
-yedge = [8.2, 8.2, 7.5, 13.3]
+yedge = [8.2, 8.2, 7.5, 7.6]
 xedge = [1.0, -1.0, 1.0, -1.0]
 
 x_var = "(tx*1497+x0)"
 y_var = "(ty*1497+y0)"
 
-bar_var = "bElementID_exp-1"
-hitcut = "abs(bElementID-bElementID_exp+1)<2" # require hit in the extrapolated bar or the adjacent bar
+bar_var = "bElementID"
+barexp_var = "bElementID_exp-1"
 
 make_effplots()
 
