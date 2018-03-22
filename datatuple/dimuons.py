@@ -61,7 +61,8 @@ differentquadrantcut = "(({0})*({1})<0 || ({2})*({3})<0)".format(x_st1[1],x_st1[
 #c.Divide(2,4)
 #for events in [displacedevents,nim2events,nim3events]:
 #for events in [displacedevents, allevents, nim2events, nim3events]:
-for events in [displacedevents, allevents]:
+#for events in [displacedevents, allevents]:
+for events in [displacedevents]:
     if (events==displacedevents):
         allcuts = " && ".join([trackqualitycut[0],fiducialcut[0],quadrantcut[0],acceptancecut[0],differentquadrantcut])
     else:
