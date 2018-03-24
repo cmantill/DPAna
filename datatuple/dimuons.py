@@ -28,6 +28,8 @@ y_st1 = [None]*3
 x_st1 = [None]*3
 y_st2 = [None]*3
 x_st2 = [None]*3
+y_dump = [None]*3
+x_dump = [None]*3
 z_yzplane = [None]*3
 quad_st1 = [None]*3
 quad_st2 = [None]*3
@@ -44,6 +46,8 @@ for sign in [1,2]:
     x_st1[sign] = "x{0}_st1+797*tx{0}_st1".format(sign)
     y_st2[sign] = "y{0}+1497*ty{0}".format(sign)
     x_st2[sign] = "x{0}+1497*tx{0}".format(sign)
+    y_dump[sign] = "y{0}+75*ty{0}".format(sign)
+    x_dump[sign] = "x{0}_st1+75*tx{0}_st1+({1})*520/pz{0}".format(sign,3-2*sign)
     z_yzplane[sign] = "-(y{0}-{1})/ty{0}".format(sign,yoffset)
     #"(0.5*(1-sign(x0+1497*tx)))+(1-sign(y0+1497*ty))"
     quad_st1[sign] = "0.5*(1-sign({0}))+1-sign({1})".format(x_st1[sign],y_st1[sign])
@@ -56,13 +60,13 @@ trackqualitycut[0] = " && ".join(trackqualitycut[1:])
 quadrantcut[0] = " && ".join(quadrantcut[1:])
 fiducialcut[0] = " && ".join(fiducialcut[1:])
 acceptancecut[0] = " && ".join(acceptancecut[1:])
-differentquadrantcut = "(({0})*({1})<0 || ({2})*({3})<0)".format(x_st1[1],x_st1[2],y_st1[1],y_st1[2])
+differentquadrantcut = "({0})*({1})<0".format(x_st1[1],x_st1[2])
 
 #c.Divide(2,4)
 #for events in [displacedevents,nim2events,nim3events]:
 #for events in [displacedevents, allevents, nim2events, nim3events]:
-#for events in [displacedevents, allevents]:
-for events in [displacedevents]:
+for events in [displacedevents, allevents]:
+#for events in [displacedevents]:
     if (events==displacedevents):
         allcuts = " && ".join([trackqualitycut[0],fiducialcut[0],quadrantcut[0],acceptancecut[0],differentquadrantcut])
     else:
@@ -125,6 +129,7 @@ for events in [displacedevents]:
     #events.Draw("chisq2:nHits2>>h(10,10.5,20.5,100,0,50)",allcuts,"colz")
     #gDirectory.Get("h").SetTitle("negative track;nHits;chisq")
     #c.Print(outfilename+".pdf");
+    print(quad_st1[1])
     
     events.Draw("{0}:{1}>>h(4,-0.5,3.5,4,-0.5,3.5)".format(quad_st1[2],quad_st1[1]),allcuts,"colz")
     gDirectory.Get("h").SetTitle("quadrants;positive track;negative track")
@@ -152,6 +157,14 @@ for events in [displacedevents]:
     
     events.Draw("{0}:{1}>>h(100,-150,150,100,-150,150)".format(y_st2[2],y_st2[1]),allcuts,"colz")
     gDirectory.Get("h").SetTitle("extrapolated Y at St2;positive track [cm];negative track [cm]")
+    c.Print(outfilename+".pdf");
+
+    events.Draw("{0}:{1}>>h(100,-50,50,100,-50,50)".format(x_dump[2],x_dump[1]),allcuts,"colz")
+    gDirectory.Get("h").SetTitle("extrapolated X at dump;positive track [cm];negative track [cm]")
+    c.Print(outfilename+".pdf");
+
+    events.Draw("{0}:{1}>>h(100,-50,50,100,-50,50)".format(y_dump[2],y_dump[1]),allcuts,"colz")
+    gDirectory.Get("h").SetTitle("extrapolated Y at dump;positive track [cm];negative track [cm]")
     c.Print(outfilename+".pdf");
 
     #c.cd(1); events.Draw("{0}:{1}>>h1(100,-100,1000,100,-150,150)".format(y_st2[1],z_yzplane[1])," && ".join([trackqualitycut[0],fiducialcut[0],quadrantcut[0],acceptancecut[0],differentquadrantcut]),"colz")
