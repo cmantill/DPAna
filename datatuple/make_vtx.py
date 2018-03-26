@@ -8,7 +8,7 @@ import root_numpy, numpy
 sys.argv = tmpargv
 
 def print_usage():
-    print "\nUsage: {0} <output ROOT file name> <input ROOT file name>".format(sys.argv[0])
+    print "\nUsage: {0} <input ROOT file name> <output ROOT file name>".format(sys.argv[0])
     print
 
 if len(sys.argv)!=3:
@@ -25,7 +25,7 @@ branchlist=["x1_st1",
     "ty2"]
 
 #events = root_numpy.root2array("dimuons.root",branches=branchlist)
-events = root_numpy.root2array(sys.argv[2],branches=branchlist)
+events = root_numpy.root2array(sys.argv[1],branches=branchlist)
 
 n = events.size
 print(n)
@@ -100,4 +100,4 @@ dataarray[1:4,:] = vertex.T
 typearray = [(i,numpy.float) for i in names]
 #stuff = [[events[i],(i,events.dtype[i])] for i in names]
 output = numpy.core.records.fromarrays(dataarray,dtype=typearray)
-root_numpy.array2root(output,sys.argv[1],mode="recreate",treename="vtx")
+root_numpy.array2root(output,sys.argv[2],mode="recreate",treename="vtx")

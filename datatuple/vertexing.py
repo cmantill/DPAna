@@ -28,6 +28,8 @@ mass = "((ty1-ty2)*(ty1-ty2)+(tx1_st1-tx2_st1)*(tx1_st1-tx2_st1))*pz1*pz2"
 allevents.Draw("{0}:{1}>>(100,-50,50,100,-50,50)".format(vtx_proj_y,vtx_proj_x),cuts,"colz")
 c.Print(outfilename+".pdf")
 
+allevents.Draw("sqrt((ty1-ty2)*(ty1-ty2)+(tx1_st1-tx2_st1)*(tx1_st1-tx2_st1)):sqrt(pz1*pz2)>>(100,0,50,100,0,0.2)",cuts,"colz")
+c.Print(outfilename+".pdf")
 allevents.Draw(mass+">>(20,0,10)",cuts,"colz")
 c.Print(outfilename+".pdf")
 
