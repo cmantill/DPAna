@@ -1,20 +1,20 @@
-CFLAGS := `root-config --cflags`
-LFLAGS := `root-config --libs`
-
-CC := g++
-
 OBJ := $(PWD)/.obj
 BIN := $(PWD)/bin
 
-SRC_DIR := $(PWD)
+SRC_DIR := $(PWD)/src
 SRC_SRC := $(wildcard $(SRC_DIR)/*.cxx)
 SRC_HDR := $(wildcard $(SRC_DIR)/*.h)
 SRC_OBJ := $(patsubst $(SRC_DIR)/%.cxx,$(OBJ)/%.o,$(SRC_SRC))
 
-EXE_DIR := $(PWD)
+EXE_DIR := $(PWD)/exe
 EXE_SRC := $(wildcard $(EXE_DIR)/*.cc)
 #EXE_OBJ := $(patsubst $(EXE_DIR)/%.cc,$(OBJ)/%.o,$(EXE_SRC))
 EXE_BIN := $(patsubst $(EXE_DIR)/%.cc,$(BIN)/%,$(EXE_SRC))
+
+CFLAGS := `root-config --cflags` -I$(SRC_DIR)
+LFLAGS := `root-config --libs`
+
+CC := g++
 
 
 # Default
