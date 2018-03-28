@@ -153,3 +153,20 @@ std::ostream& operator << (std::ostream& os, const Plane& plane)
     return os;
 }
 
+double Plane::intercept_x(double tx, double ty, double x0_track, double y0_track) const
+{
+    //double mom[3] = {tx, ty, 1.};
+    //double pos[3] = {x0_track, y0_track, 0.};
+
+    double det = -(tx*nVec[0] + ty*nVec[1] + nVec[2]);
+    double dpos[3] = {x0_track - xc, y0_track - yc, -zc};
+
+    double ucp[3];
+    ucp[0] = uVec[1] - uVec[2]*ty;
+    ucp[1] = uVec[2]*tx - uVec[0];
+    ucp[2] = uVec[0]*ty - uVec[1]*tx;
+
+    //LogInfo(detectorID << "  " << detectorName << "  " << tx << "  " << ty << "  " << x0_track << "  " << y0_track << "  "  << -(vcp[0]*dpos[0] + vcp[1]*dpos[1] + vcp[2]*dpos[2])/det);
+    return -(ucp[0]*dpos[0] + ucp[1]*dpos[1] + ucp[2]*dpos[2])/det;
+}
+

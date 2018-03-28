@@ -34,6 +34,7 @@ public:
 
     //Get interception with track
     double intercept(double tx, double ty, double x0_track, double y0_track) const;
+    double intercept_x(double tx, double ty, double x0_track, double y0_track) const;
 
     //X, Y, U, V conversion
     double getX(double w, double y) const { return w/costheta - y*tantheta; }
