@@ -385,7 +385,7 @@ int make_exp(const char* inFile = "datatuple.root",
                 //cout << " fX " << fx << " fY " << fy << " bX " << bx << " bY " << by << endl;
             }
         }
-        if (!is_alignment_run && tx1<900) { // negative track exists
+        if (!is_alignment_run && tx2<900) { // negative track exists
             for (int quad=0;quad<4;quad++) {
                 fx = dpPlanes[quad].intercept_x(tx2_st1, ty2, x2_st1, y2);
                 fy = dpPlanes[quad].intercept(tx2_st1, ty2, x2_st1, y2) - dpPlanes[quad].wc;

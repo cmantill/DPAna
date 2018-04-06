@@ -7,6 +7,7 @@ import getopt
 gROOT.SetBatch(True)
 datafile = TFile("datatuple.root")
 dataevents = datafile.Get("save")
+dataevents.AddFriend("exp","exp_datatuple.root")
 
 def makeskim(filename,cuts):
     outfile = TFile(filename,"RECREATE")
@@ -17,6 +18,7 @@ def makeskim(filename,cuts):
 #makeskim("displacedtracks.root","(x2<900 && -y2/ty2>450 && -y2/ty2<650) || (x1<900 && -y1/ty1>450 && -y1/ty1<650)")
 #makeskim("displacedtracks.root","(x2<900 && -(y2-1.6)/ty2>450 && -(y2-1.6)/ty2<650) || (x1<900 && -(y1-1.6)/ty1>450 && -(y1-1.6)/ty1<650)")
 makeskim("dimuons.root","x1<900 & x2<900 && (x1_st1+797*tx1_st1)*(x1+1497*tx1)>0 && (y1+797*ty1)*(y1+1497*ty1)>0 && (x2_st1+797*tx2_st1)*(x2+1497*tx2)>0 && (y2+797*ty2)*(y2+1497*ty2)>0")
+makeskim("dimuons_new.root","x1<900 & x2<900 && exp_fquad1<900 && exp_bquad1<900 && exp_fquad2<900 && exp_bquad2<900 && ((exp_fquad1==exp_bquad1 && exp_fquad2==exp_bquad2) || (exp_fquad1==exp_bquad2 && exp_fquad2==exp_bquad1)) && (exp_fquad1 & 1)!=(exp_fquad2 & 1)")
 makeskim("loose_dimuons.root","x1<900 & x2<900")
 makeskim("nim2.root","triggerBits>0 && (triggerBits & 64)!=0")
 makeskim("nim3.root","triggerBits>0 && (triggerBits & 128)!=0")
