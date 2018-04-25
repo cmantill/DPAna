@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 import math
-from ROOT import gROOT, gStyle, TFile, TTree, TChain, TMVA, TCut, TCanvas, gDirectory, TH1, TGraph, gPad, TF1, THStack, TLegend
+from ROOT import gROOT, gStyle, TFile, TTree, TChain, TMVA, TCut, TCanvas, gDirectory, TH1, TGraph, gPad, TF1, THStack, TLegend, TEfficiency
 import getopt
 
 gROOT.SetBatch(True)
@@ -51,19 +51,25 @@ def make_effplots():
         c.Print(outfilename+".pdf");
         '''
 
-        events.Draw(barexp_var+">>hhits_exp(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts]),"");
-        events.Draw(barexp_var+">>hhits(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts,hitcut]),"");
+        events.Draw(barexp_var+">>hhits_exp({0})".format(bar_binning)," && ".join([quadcut,fiducialcuts]),"");
+        events.Draw(barexp_var+">>hhits({0})".format(bar_binning)," && ".join([quadcut,fiducialcuts,hitcut]),"");
         numerator = gDirectory.Get("hhits")
         denominator = gDirectory.Get("hhits_exp")
-        numerator.Sumw2();
-        numerator.Divide(denominator)
-        numerator.GetYaxis().SetRangeUser(0,1.1)
-        numerator.SetTitle("efficiency vs. bar, {0}, quad {1};extrapolated bar ID;efficiency".format(station,quad))
-        numerator.Draw();
+        eff = TEfficiency(numerator,denominator)
+        #eff.GetYaxis().SetRangeUser(0,1.1)
+        eff.SetTitle("efficiency vs. bar, {0}, quad {1};extrapolated bar ID;efficiency".format(station,quad))
+        eff.Draw()
+        gPad.Update()
+        eff.GetPaintedGraph().SetMinimum(0)
+        eff.GetPaintedGraph().SetMaximum(1.1)
+        #numerator.Sumw2();
+        #numerator.Divide(denominator)
+        #numerator.GetYaxis().SetRangeUser(0,1.1)
+        #numerator.SetTitle("efficiency vs. bar, {0}, quad {1};extrapolated bar ID;efficiency".format(station,quad))
+        #numerator.Draw();
         c.Print(outfilename+".pdf");
 
-        events.Draw(barexp_var+">>hhits_exp(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts]),"");
-        events.Draw(bar_var+">>hhits(60,-0.5,59.5)"," && ".join([quadcut,fiducialcuts,hitcut]),"");
+        events.Draw(bar_var+">>hhits({0})".format(bar_binning)," && ".join([quadcut,fiducialcuts,hitcut]),"");
         numerator = gDirectory.Get("hhits")
         denominator = gDirectory.Get("hhits_exp")
         numerator.Sumw2();
@@ -110,11 +116,21 @@ def make_effplots():
         #c.Print(outfilename+".pdf");
         numerator = gDirectory.Get("hy")
         denominator = gDirectory.Get("hy_exp")
+        eff = TEfficiency(numerator,denominator)
+        #eff.GetYaxis().SetRangeUser(0,1.1)
+        eff.SetTitle("efficiency vs. position, {0}, quad {1};extrapolated y [cm];efficiency".format(station,quad))
+        eff.Draw("APZ")
+        #eff.Draw("A3")
+        gPad.Update()
+        #eff.GetPaintedGraph().SetFillColor(12)
+        #eff.GetPaintedGraph().SetFillStyle(1001)
+        eff.GetPaintedGraph().SetMinimum(0)
+        eff.GetPaintedGraph().SetMaximum(1.1)
         #numerator.Sumw2();
-        numerator.Divide(denominator)
-        numerator.GetYaxis().SetRangeUser(0,1.1)
-        numerator.SetTitle("efficiency vs. position, {0}, quad {1};extrapolated y [cm];efficiency".format(station,quad))
-        numerator.Draw();
+        #numerator.Divide(denominator)
+        #numerator.GetYaxis().SetRangeUser(0,1.1)
+        #numerator.SetTitle("efficiency vs. position, {0}, quad {1};extrapolated y [cm];efficiency".format(station,quad))
+        #numerator.Draw();
         c.Print(outfilename+".pdf");
 
         #events.Draw("ty*797+y0:tx*797+x0>>hexp2d_fid(200,-50,50,200,-50,50)",fiducialcuts,"colz");
@@ -126,11 +142,18 @@ def make_effplots():
         c.Print(outfilename+".pdf");
         numerator = gDirectory.Get("hexp2d_withhit")
         denominator = gDirectory.Get("hexp2d")
+        eff = TEfficiency(numerator,denominator)
+        #eff.GetZaxis().SetRangeUser(0,1)
+        eff.SetTitle("efficiency vs. position, {0}, quad {1};extrapolated x [cm];extrapolated y [cm]".format(station,quad))
+        eff.Draw("colz")
+        gPad.Update()
+        eff.GetPaintedHistogram().GetZaxis().SetRangeUser(0,1)
+        #eff.GetPaintedGraph().SetMaximum(1.1)
         #numerator.Sumw2();
-        numerator.Divide(denominator)
-        numerator.GetZaxis().SetRangeUser(0,1)
-        numerator.SetTitle("efficiency vs. position, {0}, quad {1};extrapolated x [cm];extrapolated y [cm]".format(station,quad))
-        numerator.Draw("colz");
+        #numerator.Divide(denominator)
+        #numerator.GetZaxis().SetRangeUser(0,1)
+        #numerator.SetTitle("efficiency vs. position, {0}, quad {1};extrapolated x [cm];extrapolated y [cm]".format(station,quad))
+        #numerator.Draw("colz");
         c.Print(outfilename+".pdf");
 
         '''
@@ -146,6 +169,7 @@ station = "St1"
 x_binning = "200,-50,50"
 y_binning = "500,-50,50"
 flipped_y_binning = "500,0,50"
+bar_binning = "30,0.5,30.5"
 
 yedge = [8.7, 8.3, 7.1, 7.4]
 xedge = [-2.0, 2.0, -2.0, 2.0]
@@ -162,6 +186,7 @@ station = "St2"
 x_binning = "200,-100,100"
 y_binning = "1200,-120,120"
 flipped_y_binning = "1200,0,120"
+bar_binning = "50,0.5,50.5"
 
 yedge = [8.2, 8.2, 7.5, 7.6]
 xedge = [1.0, -1.0, 1.0, -1.0]
