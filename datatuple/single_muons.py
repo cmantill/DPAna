@@ -43,8 +43,10 @@ for sign in [1,2]:
         trackqualitycut = "x{0}<900".format(sign)
         quadrantcut = "({0})*({1})>0 && ({2})*({3})>0".format(x_st1,x_st2,y_st1,y_st2)
         fiducialcut = "abs({0})>8 && abs({1})>8".format(y_st1, y_st2)
-        acceptancecut = "{0}>450 && {0}<650".format(z_yzplane)
+        acceptancecut = "{0}>350 && {0}<650".format(z_yzplane)
 
+        print(" && ".join([trackqualitycut,acceptancecut,quadrantcut]))
+        print(" && ".join([trackqualitycut,acceptancecut,quadrantcut,fiducialcut]))
         c.cd(1)
         #events.Draw("{0}:{1}>>h1(100,-1000,1000,100,-150,150)".format(y_st2,z_yzplane)," && ".join([trackqualitycut,fiducialcut,quadrantcut]),"colz")
         events.Draw("{0}>>h1(100,-50,50)".format(y_st1)," && ".join([trackqualitycut,acceptancecut,quadrantcut]),"")
