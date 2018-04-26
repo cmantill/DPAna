@@ -234,32 +234,5 @@ for quad in range(0,12):
     c.cd()
     c.Print(outfilename+".pdf");
 
-
-hrawtimes = infile.Get("rawTimeHists")
-hrawtimes.Scale(1000.0/trigsDP)
-hrawtimesNIM1 = infile.Get("rawTimeHistsNIM1")
-hrawtimesNIM1.Scale(1000.0/trigsNIM1)
-hDCtimes = hrawtimes.ProjectionX("DCtimes",20,25)
-hDCtimesNIM1 = hrawtimesNIM1.ProjectionX("DCtimesNIM1",20,25)
-c.Clear()
-c.Divide(1,2)
-
-c.cd(1)
-hrawtimes.Draw("colz")
-c.cd(2)
-hrawtimesNIM1.Draw("colz")
-c.cd()
-c.Print(outfilename+".pdf");
-
-c.cd(1)
-hDCtimes.Draw("HIST")
-hDCtimes.GetXaxis().SetRangeUser(1270,1820)
-c.cd(2)
-hDCtimesNIM1.Draw("HIST")
-hDCtimesNIM1.GetXaxis().SetRangeUser(1100,1650)
-
-c.cd()
-c.Print(outfilename+".pdf");
-
 c.Print(outfilename+".pdf]");
 
