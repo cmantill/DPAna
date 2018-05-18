@@ -96,20 +96,26 @@ int main(int argc,char** argv)
     //double decay_length = -1.0;
     double eps = 1e-6;
 
-    int n_decay = 100; //number of times to sample the decay distribution for each input event
+    int n_repeat = 100; //number of times to sample the decay distribution for each input event
+    double vx_production[3] = {0.0, 2.0, 50.0};//beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     double min_vz = 300.0;
     double max_vz = 800.0;
 
     double fmag_maxkick = 2.9; //GeV/c
     double fmag_minz = 0.0;
     double fmag_maxz = 500.0;
-    double kmag_maxkick = 0.4; //GeV/c
-    double kmag_minz = 900.0;
-    double kmag_maxz = 1200.0;
+    double kmag_maxkick = 0.414; //GeV/c
+    //center of KMag is at z=1041.8
+    double kmag_minz = 891.8;
+    double kmag_maxz = 1191.8;
+    Double_t mass = -1.0;
+    double ctau = 0.0;
+
+    bool cut_on_acceptance = false;
 
     int c;
 
-    while ((c = getopt(argc,argv,"hs:l:")) !=-1)
+    while ((c = getopt(argc,argv,"hs:n:e:m:z:Z:c")) !=-1)
         switch (c)
         {
             case 'h':
@@ -121,9 +127,24 @@ int main(int argc,char** argv)
             case 's':
                 rseed = atoi(optarg);
                 break;
-                //case 'l':
-                //decay_length = atof(optarg);
-                //break;
+            case 'n':
+                n_repeat = atoi(optarg);
+                break;
+            case 'e':
+                eps = atof(optarg);
+                break;
+            case 'm':
+                mass = atof(optarg);
+                break;
+            case 'z':
+                min_vz = atof(optarg);
+                break;
+            case 'Z':
+                max_vz = atof(optarg);
+                break;
+            case 'c':
+                cut_on_acceptance = true;;
+                break;
             case '?':
                 printf("Invalid option or missing option argument; -h to list options\n");
                 return(1);
@@ -155,6 +176,11 @@ int main(int argc,char** argv)
     //TSpline3 * r_spline = new TSpline3("R_ratio", e_cm, r_ratio, n_rpoints, "", 0.0, r_ratio[n_rpoints-1]);
     TSpline3 * r_spline = new TSpline3("R_ratio", e_cm, r_ratio, n_rpoints);
 
+    if (mass>0) {
+        ctau = get_ctau(r_spline,mass)/(eps*eps);
+        printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
+    }
+
     FILE * in_file;
 
     in_file = fopen(argv[optind],"r");
@@ -179,7 +205,7 @@ int main(int argc,char** argv)
 
 
     Double_t vx[3];
-    Double_t mass, px0, py0, pz0;
+    Double_t px0, py0, pz0;
     Double_t pz1, y1, ty1, x1_st1, tx1_st1, x1, tx1;
     Double_t pz2, y2, ty2, x2_st1, tx2_st1, x2, tx2;
     save->Branch("vx",&vx[0],"vx/D");
@@ -285,8 +311,12 @@ int main(int argc,char** argv)
             //printf("%d %f %f %f %f %f\n",negtrack->idhep,negtrack->phep[0],negtrack->phep[1],negtrack->phep[2],negtrack->phep[3],negtrack->phep[4]);
             //printf("%d %f %f %f %f %f\n",postrack->idhep,postrack->phep[0],postrack->phep[1],postrack->phep[2],postrack->phep[3],postrack->phep[4]);
 
-            double ctau, gamma, beta;
-            ctau = get_ctau(r_spline,aprime->phep[4])/(eps*eps);
+            if (mass<0) { //only read mass on the first event (assume all events in a file have the same mass)
+                mass = aprime->phep[4];
+                ctau = get_ctau(r_spline,mass)/(eps*eps);
+                printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
+            }
+            double gamma, beta;
             gamma = aprime->phep[3]/aprime->phep[4];
             beta = sqrt(1.0-pow(gamma,-2.0));
             double decay_length = beta*gamma*ctau;
@@ -294,16 +324,15 @@ int main(int argc,char** argv)
             for (int j=0;j<3;j++) p += aprime->phep[j]*aprime->phep[j];
             p = sqrt(p);
 
-            mass = aprime->phep[4];
             px0 = aprime->phep[0];
             py0 = aprime->phep[1];
             pz0 = aprime->phep[2];
 
-            for (int i=0;i<n_decay;i++) {
+            for (int i=0;i<n_repeat;i++) {
                 double vtx_displacement = gsl_ran_exponential(r,decay_length);
 
                 //double vx[3]; //vertex position
-                for (int j=0;j<3;j++) vx[j] = vtx_displacement*aprime->phep[j]/p;
+                for (int j=0;j<3;j++) vx[j] = vtx_displacement*aprime->phep[j]/p + vx_production[j];
                 if (vx[2]<min_vz || vx[2]>max_vz) continue;
 
                 //printf("%f, %f, %f, %f, %f, %f, %f\n",decay_length, vtx_displacement, p, vx[0], vx[1], vx[2], aprime->phep[2]);
@@ -357,9 +386,12 @@ int main(int argc,char** argv)
                 //double x2_kmag = x1_st1 + kmag_center*tx1_st1;
                 x2 = vx[0] + x2_st1 + kmag_center*tx2_st1 - kmag_center*tx2;
 
+                //abs(x1+1900*tx1)<110 && abs(y1+1900*ty1)<140
+                if (cut_on_acceptance && (abs(x1+1900*tx1)>110 || abs(y1+1900*ty1)>140)) continue;
+                if (cut_on_acceptance && (abs(x2+1900*tx2)>110 || abs(y2+1900*ty2)>140)) continue;
                 save->Fill();
             }
-            printf("%d\n",nevhep);
+            if (nevhep%100==0) printf("%d\n",nevhep);
         }
         else printf("WARNING: missing A', mu-, or mu+\n");
         nevhep++;
