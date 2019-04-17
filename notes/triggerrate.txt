@@ -1,0 +1,12 @@
+trigger counts: 61814.0 NIM1, 142585.0 DP, 211693.0 NIM3
+DP trigger with good roads: 70.0
+trigger fraction: 0.000490935231616
+
+NIM3 with good roads: 13.0
+trigger fraction: 6.14096828898e-05
+
+accepted NIM3 triggers/spill = ~40
+accepted DP triggers/spill = ~25
+after inhibit DP triggers/spill = ~200
+
+bunches/spill = 4.2*53e6 = 2.2e8 (ignore empty and inhibited bunches)

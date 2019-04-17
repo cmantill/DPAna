@@ -8,7 +8,8 @@ gROOT.SetBatch(True)
 gStyle.SetOptStat(11)
 #gStyle.SetOptFit(1)
 infile = TFile("roadCheck_data.root")
-infilepre = TFile("roadCheck_predata.root")
+#infilepre = TFile("roadCheck_predata.root")
+infilepre = TFile("roadCheck_allpredata.root")
 #infile = TFile("roadCheck_test.root")
 
 outfilename="timeOffset"

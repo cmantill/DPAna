@@ -14,28 +14,22 @@ using namespace std;
 #include <TMath.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <TH1D.h>
 
 
 struct stdhep_entry {
     int isthep;     /* status code */
     int idhep;      /* The particle id */
     int jmohep[2];    /* The position of the mother particle */
-    int jdahep[2];    /* Position of the first daughter... */
     double phep[5];    /* 4-Momentum, mass */
-    double vhep[4];    /* Vertex information */
     //double spinlh[3];
     //    //double icolorflowlh[2];
 };
 
 struct stdhep_event {
-    vector<stdhep_entry> particles;
-    int nevhep;
-    bool has_hepev4;
-    int idruplh;
-    double eventweightlh;
-    //double alphaqedlh;
-    //    //double alphaqcdlh;
-    //        //double scalelh[10];
+    stdhep_entry *aprime;
+    stdhep_entry *postrack;
+    stdhep_entry *negtrack;
 };
 
 // decay width calculations follow arXiv:1311.3870, Eq. 27 and 28
@@ -111,11 +105,13 @@ int main(int argc,char** argv)
     Double_t mass = -1.0;
     double ctau = 0.0;
 
-    bool cut_on_acceptance = false;
+    bool cut_on_acceptance_tracking = false;
+    bool cut_on_acceptance_trigger = false;
+    bool write_tree = false;
 
     int c;
 
-    while ((c = getopt(argc,argv,"hs:n:e:m:z:Z:c")) !=-1)
+    while ((c = getopt(argc,argv,"hs:n:e:E:m:z:Z:cCw")) !=-1)
         switch (c)
         {
             case 'h':
@@ -133,6 +129,9 @@ int main(int argc,char** argv)
             case 'e':
                 eps = atof(optarg);
                 break;
+            case 'E':
+                eps = pow(10.0,atof(optarg));
+                break;
             case 'm':
                 mass = atof(optarg);
                 break;
@@ -143,7 +142,13 @@ int main(int argc,char** argv)
                 max_vz = atof(optarg);
                 break;
             case 'c':
-                cut_on_acceptance = true;;
+                cut_on_acceptance_tracking = true;
+                break;
+            case 'C':
+                cut_on_acceptance_trigger = true;
+                break;
+            case 'w':
+                write_tree = true;
                 break;
             case '?':
                 printf("Invalid option or missing option argument; -h to list options\n");
@@ -158,6 +163,7 @@ int main(int argc,char** argv)
         return 1;
     }
 
+    /*
     double e_cm[2000], r_ratio[2000];
     int n_rpoints = 0;
     FILE * r_file;
@@ -173,8 +179,13 @@ int main(int argc,char** argv)
     }
     printf("loaded R data with %d points\n",n_rpoints);
     fclose(r_file);
-    //TSpline3 * r_spline = new TSpline3("R_ratio", e_cm, r_ratio, n_rpoints, "", 0.0, r_ratio[n_rpoints-1]);
-    TSpline3 * r_spline = new TSpline3("R_ratio", e_cm, r_ratio, n_rpoints);
+    TSpline3 * r_spline = new TSpline3("R_ratio", e_cm, r_ratio, n_rpoints, "", 0.0, r_ratio[n_rpoints-1]);
+    r_spline->SetName("R_ratio");
+    //TSpline3 * r_spline = new TSpline3("R_ratio", e_cm, r_ratio, n_rpoints);
+    //
+    */
+    TFile *r_file = new TFile("r_ratio.root");
+    TSpline3 * r_spline = (TSpline3*) r_file->Get("R_ratio");
 
     if (mass>0) {
         ctau = get_ctau(r_spline,mass)/(eps*eps);
@@ -200,7 +211,14 @@ int main(int argc,char** argv)
     //sprintf(filename,"%s.root",argv[optind+1]);
     //TFile* saveFile = new TFile(filename, "recreate");
     TFile* saveFile = new TFile(argv[optind+1], "recreate");
-    TTree* save = new TTree("save", "save");
+    TTree* save;
+    if (write_tree)
+        save = new TTree("save", "save");
+    TH1D * h1vz_all = new TH1D("vz_all","vz_all",100,300,800);
+    TH1D * h1vz_trk = new TH1D("vz_trk","vz_trk",100,300,800);
+    TH1D * h1vz_trggeom = new TH1D("vz_trggeom","vz_trggeom",100,300,800);
+    TH1D * h1vz_trgquad = new TH1D("vz_trgquad","vz_trgquad",100,300,800);
+    TH1D * h1vz_trg = new TH1D("vz_trg","vz_trg",100,300,800);
     //saveFile->cd();
 
 
@@ -208,32 +226,36 @@ int main(int argc,char** argv)
     Double_t px0, py0, pz0;
     Double_t pz1, y1, ty1, x1_st1, tx1_st1, x1, tx1;
     Double_t pz2, y2, ty2, x2_st1, tx2_st1, x2, tx2;
-    save->Branch("vx",&vx[0],"vx/D");
-    save->Branch("vy",&vx[1],"vy/D");
-    save->Branch("vz",&vx[2],"vz/D");
-    save->Branch("mass",&mass,"mass/D");
-    save->Branch("px0",&px0,"px0/D");
-    save->Branch("py0",&py0,"py0/D");
-    save->Branch("pz0",&pz0,"pz0/D");
+    if (write_tree) {
+        save->Branch("vx",&vx[0],"vx/D");
+        save->Branch("vy",&vx[1],"vy/D");
+        save->Branch("vz",&vx[2],"vz/D");
+        save->Branch("mass",&mass,"mass/D");
+        save->Branch("px0",&px0,"px0/D");
+        save->Branch("py0",&py0,"py0/D");
+        save->Branch("pz0",&pz0,"pz0/D");
 
-    save->Branch("pz1",&pz1,"pz1/D");
-    save->Branch("y1",&y1,"y1/D");
-    save->Branch("ty1",&ty1,"ty1/D");
-    save->Branch("x1_st1",&x1_st1,"x1_st1/D");
-    save->Branch("tx1_st1",&tx1_st1,"tx1_st1/D");
-    save->Branch("x1",&x1,"x1/D");
-    save->Branch("tx1",&tx1,"tx1/D");
+        save->Branch("pz1",&pz1,"pz1/D");
+        save->Branch("y1",&y1,"y1/D");
+        save->Branch("ty1",&ty1,"ty1/D");
+        save->Branch("x1_st1",&x1_st1,"x1_st1/D");
+        save->Branch("tx1_st1",&tx1_st1,"tx1_st1/D");
+        save->Branch("x1",&x1,"x1/D");
+        save->Branch("tx1",&tx1,"tx1/D");
 
-    save->Branch("pz2",&pz2,"pz2/D");
-    save->Branch("y2",&y2,"y2/D");
-    save->Branch("ty2",&ty2,"ty2/D");
-    save->Branch("x2_st1",&x2_st1,"x2_st1/D");
-    save->Branch("tx2_st1",&tx2_st1,"tx2_st1/D");
-    save->Branch("x2",&x2,"x2/D");
-    save->Branch("tx2",&tx2,"tx2/D");
+        save->Branch("pz2",&pz2,"pz2/D");
+        save->Branch("y2",&y2,"y2/D");
+        save->Branch("ty2",&ty2,"ty2/D");
+        save->Branch("x2_st1",&x2_st1,"x2_st1/D");
+        save->Branch("tx2_st1",&tx2_st1,"tx2_st1/D");
+        save->Branch("x2",&x2,"x2/D");
+        save->Branch("tx2",&tx2,"tx2/D");
+    }
 
+    vector<stdhep_event> input_events;
 
     nevhep = 1;
+    int n_accepted_events = 0;
 
     //printf("Applying decay length of %f mm\n",decay_length>0?decay_length:0.0);
 
@@ -257,7 +279,7 @@ int main(int argc,char** argv)
         //fgets(line,1000,in_file);
         //sscanf(line,"%d %d %lf %*f %*f %*f",&nup,&idprup,&xwgtup);
 
-        struct stdhep_entry *aprime=0, *postrack=0, *negtrack=0;
+        struct stdhep_event temp_event = (struct stdhep_event) {0,0,0};
         //for (int i=0;i<nup;i++) {
         while (true) {
             struct stdhep_entry *temp = new struct stdhep_entry;
@@ -289,50 +311,56 @@ int main(int argc,char** argv)
                }
                */
             if (temp->isthep==2 && temp->idhep==666) {// intermediate particle, PDG ID 666
-                if (aprime) printf("WARNING: multiple A'\n");
-                aprime = temp;
-            }
-            if (temp->isthep==3) {// final state particle
-                if (temp->idhep==13) {// mu-
-                    if (negtrack) printf("WARNING: multiple mu-\n");
-                    negtrack = temp;
-                }
-                if (temp->idhep==-13) {// mu+
-                    if (postrack) printf("WARNING: multiple mu+\n");
-                    postrack = temp;
+                if (temp_event.aprime) printf("WARNING: multiple A'\n");
+                temp_event.aprime = temp;
+                if (mass<0) { //only read mass on the first event (assume all events in a file have the same mass)
+                    mass = temp->phep[4];
+                    ctau = get_ctau(r_spline,mass)/(eps*eps);
+                    printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
                 }
             }
-            for (int j=0;j<4;j++) temp->vhep[j] = 0.0;
-            for (int j=0;j<2;j++) temp->jdahep[j] = 0;
+            else if (temp->isthep==3 && temp->idhep==13) {// final state particle. mu-
+                if (temp_event.negtrack) printf("WARNING: multiple mu-\n");
+                temp_event.negtrack = temp;
+            }
+            else if (temp->isthep==3 && temp->idhep==-13) {// final state particle, mu+
+                if (temp_event.postrack) printf("WARNING: multiple mu+\n");
+                temp_event.postrack = temp;
+            }
+            else delete temp;
             //new_event.particles.push_back(*temp);
         }
-        if (aprime && negtrack && postrack) {
-            //printf("%d %f %f %f %f %f\n",aprime->idhep,aprime->phep[0],aprime->phep[1],aprime->phep[2],aprime->phep[3],aprime->phep[4]);
-            //printf("%d %f %f %f %f %f\n",negtrack->idhep,negtrack->phep[0],negtrack->phep[1],negtrack->phep[2],negtrack->phep[3],negtrack->phep[4]);
-            //printf("%d %f %f %f %f %f\n",postrack->idhep,postrack->phep[0],postrack->phep[1],postrack->phep[2],postrack->phep[3],postrack->phep[4]);
+        if (temp_event.aprime && temp_event.negtrack && temp_event.postrack) {
+            input_events.push_back(temp_event);
+        }
+        else printf("WARNING: missing A', mu-, or mu+\n");
+        if (nevhep%1000==0) printf("%d\n",nevhep);
+        nevhep++;
+    }
+    //printf("%d %f %f %f %f %f\n",aprime->idhep,aprime->phep[0],aprime->phep[1],aprime->phep[2],aprime->phep[3],aprime->phep[4]);
+    //printf("%d %f %f %f %f %f\n",negtrack->idhep,negtrack->phep[0],negtrack->phep[1],negtrack->phep[2],negtrack->phep[3],negtrack->phep[4]);
+    //printf("%d %f %f %f %f %f\n",postrack->idhep,postrack->phep[0],postrack->phep[1],postrack->phep[2],postrack->phep[3],postrack->phep[4]);
 
-            if (mass<0) { //only read mass on the first event (assume all events in a file have the same mass)
-                mass = aprime->phep[4];
-                ctau = get_ctau(r_spline,mass)/(eps*eps);
-                printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
-            }
+    int n_extra_repeats = 0;
+    do {
+        for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
             double gamma, beta;
-            gamma = aprime->phep[3]/aprime->phep[4];
+            gamma = event->aprime->phep[3]/event->aprime->phep[4];
             beta = sqrt(1.0-pow(gamma,-2.0));
             double decay_length = beta*gamma*ctau;
             double p = 0.0;
-            for (int j=0;j<3;j++) p += aprime->phep[j]*aprime->phep[j];
+            for (int j=0;j<3;j++) p += event->aprime->phep[j]*event->aprime->phep[j];
             p = sqrt(p);
 
-            px0 = aprime->phep[0];
-            py0 = aprime->phep[1];
-            pz0 = aprime->phep[2];
+            px0 = event->aprime->phep[0];
+            py0 = event->aprime->phep[1];
+            pz0 = event->aprime->phep[2];
 
             for (int i=0;i<n_repeat;i++) {
                 double vtx_displacement = gsl_ran_exponential(r,decay_length);
 
                 //double vx[3]; //vertex position
-                for (int j=0;j<3;j++) vx[j] = vtx_displacement*aprime->phep[j]/p + vx_production[j];
+                for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production[j];
                 if (vx[2]<min_vz || vx[2]>max_vz) continue;
 
                 //printf("%f, %f, %f, %f, %f, %f, %f\n",decay_length, vtx_displacement, p, vx[0], vx[1], vx[2], aprime->phep[2]);
@@ -362,42 +390,57 @@ int main(int argc,char** argv)
                     kmag_center = (kmag_maxz+kmag_minz)/2.0;
                 }
 
-                pz1 = postrack->phep[2];
-                ty1 = postrack->phep[1]/postrack->phep[2];
-                tx1_st1 = (postrack->phep[0]+fmag_kick)/postrack->phep[2];
-                tx1 = (postrack->phep[0]+fmag_kick+kmag_kick)/postrack->phep[2];
+                pz1 = event->postrack->phep[2];
+                ty1 = event->postrack->phep[1]/event->postrack->phep[2];
+                tx1_st1 = (event->postrack->phep[0]+fmag_kick)/event->postrack->phep[2];
+                tx1 = (event->postrack->phep[0]+fmag_kick+kmag_kick)/event->postrack->phep[2];
                 //ty1 = postrack->phep[1]/postrack->phep[2];
                 y1 = vx[1] - vx[2]*ty1;//extrapolate to z=0
                 //double tx1_dump = postrack->phep[0]/postrack->phep[2];
                 //double x1_fmag = vx[0] + (fmag_center-vx[2])*tx1_dump;
-                x1_st1 = vx[0] + (fmag_center-vx[2])*(postrack->phep[0]/postrack->phep[2]) - fmag_center*tx1_st1;
+                x1_st1 = vx[0] + (fmag_center-vx[2])*(event->postrack->phep[0]/event->postrack->phep[2]) - fmag_center*tx1_st1;
                 //double x1_kmag = x1_st1 + kmag_center*tx1_st1;
                 x1 = vx[0] + x1_st1 + kmag_center*tx1_st1 - kmag_center*tx1;
 
-                pz2 = negtrack->phep[2];
-                ty2 = negtrack->phep[1]/negtrack->phep[2];
-                tx2_st1 = (negtrack->phep[0]-fmag_kick)/negtrack->phep[2];
-                tx2 = (negtrack->phep[0]-fmag_kick-kmag_kick)/negtrack->phep[2];
+                pz2 = event->negtrack->phep[2];
+                ty2 = event->negtrack->phep[1]/event->negtrack->phep[2];
+                tx2_st1 = (event->negtrack->phep[0]-fmag_kick)/event->negtrack->phep[2];
+                tx2 = (event->negtrack->phep[0]-fmag_kick-kmag_kick)/event->negtrack->phep[2];
                 //ty2 = negtrack->phep[1]/negtrack->phep[2];
                 y2 = vx[1] - vx[2]*ty2;//extrapolate to z=0
                 //double tx2_dump = negtrack->phep[0]/negtrack->phep[2];
                 //double x2_fmag = vx[0] + (fmag_center-vx[2])/tx1_dump;
-                x2_st1 = vx[0] + (fmag_center-vx[2])*(negtrack->phep[0]/negtrack->phep[2]) - fmag_center*tx2_st1;
+                x2_st1 = vx[0] + (fmag_center-vx[2])*(event->negtrack->phep[0]/event->negtrack->phep[2]) - fmag_center*tx2_st1;
                 //double x2_kmag = x1_st1 + kmag_center*tx1_st1;
                 x2 = vx[0] + x2_st1 + kmag_center*tx2_st1 - kmag_center*tx2;
+                h1vz_all->Fill(vx[2]);
+                if (cut_on_acceptance_tracking && (abs(x1+1900*tx1)>110 || abs(y1+1900*ty1)>140)) continue;
+                if (cut_on_acceptance_tracking && (abs(x2+1900*tx2)>110 || abs(y2+1900*ty2)>140)) continue;
+                h1vz_trk->Fill(vx[2]);
+                if (cut_on_acceptance_trigger && (abs(y1+797*ty1)<7.5 || abs(y1+1497*ty1)<7.5 || abs(y1+1497*ty1)>105.0 || abs(y1+2200*ty1)>180)) continue;
+                if (cut_on_acceptance_trigger && (abs(y2+797*ty2)<7.5 || abs(y2+1497*ty2)<7.5 || abs(y2+1497*ty2)>105.0 || abs(y2+2200*ty2)>180)) continue;
+                h1vz_trggeom->Fill(vx[2]);
+                if (cut_on_acceptance_trigger && ((x1_st1+797*tx1_st1)*(x1+1497*tx1)<0 || (x1+1497*tx1)*(x1+2200*tx1)<0 || (y1+797*ty1)*(y1+2200*ty1)<0)) continue;
+                if (cut_on_acceptance_trigger && ((x2_st1+797*tx2_st1)*(x2+1497*tx2)<0 || (x2+1497*tx2)*(x2+2200*tx2)<0 || (y2+797*ty2)*(y2+2200*ty2)<0)) continue;
+                h1vz_trgquad->Fill(vx[2]);
+                if (cut_on_acceptance_trigger && (-y1/ty1<400 || -y1/ty1>650)) continue;
+                if (cut_on_acceptance_trigger && (-y2/ty2<400 || -y2/ty2>650)) continue;
+                h1vz_trg->Fill(vx[2]);
 
-                //abs(x1+1900*tx1)<110 && abs(y1+1900*ty1)<140
-                if (cut_on_acceptance && (abs(x1+1900*tx1)>110 || abs(y1+1900*ty1)>140)) continue;
-                if (cut_on_acceptance && (abs(x2+1900*tx2)>110 || abs(y2+1900*ty2)>140)) continue;
-                save->Fill();
+                n_accepted_events++;
+                if (write_tree)
+                    save->Fill();
             }
-            if (nevhep%100==0) printf("%d\n",nevhep);
         }
-        else printf("WARNING: missing A', mu-, or mu+\n");
-        nevhep++;
-    }
+        n_extra_repeats++;
+    } while (n_accepted_events>0 && n_accepted_events<10);//if we get any events, run until we have 10 good events
+    printf("%d events accepted by cuts after %dx%d samples of %d events\n",n_accepted_events,n_repeat,n_extra_repeats,input_events.size());
     //save->Write();
-    r_spline->Write();
+    h1vz_all->Scale(1.0/(n_repeat*n_extra_repeats));
+    h1vz_trk->Scale(1.0/(n_repeat*n_extra_repeats));
+    h1vz_trggeom->Scale(1.0/(n_repeat*n_extra_repeats));
+    h1vz_trgquad->Scale(1.0/(n_repeat*n_extra_repeats));
+    h1vz_trg->Scale(1.0/(n_repeat*n_extra_repeats));
     saveFile->Write();
     saveFile->Close();
     }

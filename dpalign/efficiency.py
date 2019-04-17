@@ -16,7 +16,9 @@ outfilename="efficiency"
 c = TCanvas("c","c",1200,900);
 c.Print(outfilename+".pdf[")
 
+outFile = TFile(outfilename+".root","RECREATE")
 
+quadnames = ["LT","RT","LB","RB"]
 
 def make_effplots():
     hitcut = "abs(({0})-({1}))<2".format(bar_var,barexp_var) # require hit in the extrapolated bar or the adjacent bar
@@ -51,13 +53,15 @@ def make_effplots():
         c.Print(outfilename+".pdf");
         '''
 
-        events.Draw(barexp_var+">>hhits_exp({0})".format(bar_binning)," && ".join([quadcut,fiducialcuts]),"");
-        events.Draw(barexp_var+">>hhits({0})".format(bar_binning)," && ".join([quadcut,fiducialcuts,hitcut]),"");
-        numerator = gDirectory.Get("hhits")
-        denominator = gDirectory.Get("hhits_exp")
+        events.Draw(barexp_var+">>hhits_exp_{0}_quad{1}({2})".format(station,quad,bar_binning)," && ".join([quadcut,fiducialcuts]),"");
+        events.Draw(barexp_var+">>hhits_{0}_quad{1}({2})".format(station,quad,bar_binning)," && ".join([quadcut,fiducialcuts,hitcut]),"");
+        numerator = gDirectory.Get("hhits_{0}_quad{1}".format(station,quad))
+        denominator = gDirectory.Get("hhits_exp_{0}_quad{1}".format(station,quad))
         eff = TEfficiency(numerator,denominator)
+        eff.SetName("eff_{0}_quad{1}".format(station,quad))
         #eff.GetYaxis().SetRangeUser(0,1.1)
-        eff.SetTitle("efficiency vs. bar, {0}, quad {1};extrapolated bar ID;efficiency".format(station,quad))
+        eff.SetTitle("efficiency vs. bar, {0}, quad {1} ({2});extrapolated bar ID;efficiency".format(station,quad,quadnames[quad]))
+        eff.Write()
         eff.Draw()
         gPad.Update()
         eff.GetPaintedGraph().SetMinimum(0)
@@ -69,13 +73,13 @@ def make_effplots():
         #numerator.Draw();
         c.Print(outfilename+".pdf");
 
-        events.Draw(bar_var+">>hhits({0})".format(bar_binning)," && ".join([quadcut,fiducialcuts,hitcut]),"");
-        numerator = gDirectory.Get("hhits")
-        denominator = gDirectory.Get("hhits_exp")
+        events.Draw(bar_var+">>hhits2_{0}_quad{1}({2})".format(station,quad,bar_binning)," && ".join([quadcut,fiducialcuts,hitcut]),"");
+        numerator = gDirectory.Get("hhits2_{0}_quad{1}".format(station,quad))
+        denominator = gDirectory.Get("hhits_exp_{0}_quad{1}".format(station,quad))
         numerator.Sumw2();
         numerator.Divide(denominator)
         numerator.GetYaxis().SetRangeUser(0,1.1)
-        numerator.SetTitle("efficiency vs. bar, {0}, quad {1};hit bar ID;efficiency".format(station,quad))
+        numerator.SetTitle("efficiency vs. bar, {0}, quad {1} ({2});hit bar ID;efficiency".format(station,quad,quadnames[quad]))
         numerator.Draw();
         c.Print(outfilename+".pdf");
 
@@ -200,3 +204,5 @@ barexp_var = "bElementID_exp-1"
 make_effplots()
 
 c.Print(outfilename+".pdf]");
+outFile.Write()
+outFile.Close()

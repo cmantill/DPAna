@@ -5,7 +5,8 @@ from ROOT import gROOT, gStyle, TFile, TTree, TChain, TMVA, TCut, TCanvas, gDire
 import getopt
 
 gROOT.SetBatch(True)
-gStyle.SetOptStat(11)
+#gStyle.SetOptStat(11)
+gStyle.SetOptStat(0)
 #gStyle.SetOptFit(1)
 #infile = TFile("roadCheck_predata.root")
 infile = TFile("roadCheck_data.root")
@@ -15,6 +16,8 @@ outfilename="roadCheck"
 
 c = TCanvas("c","c",1200,900);
 c.Print(outfilename+".pdf[")
+
+l2_quadpatterns = [5, 6, 7, 9, 10, 11, 13, 14, 15] # 0101 0110 0111 1001 1010 1011 1101 1110 1111
 
 c.Divide(2,2)
 
@@ -62,12 +65,22 @@ hquadsH4DP = htrig.ProjectionY("quadsH4DP",65,65)
 hquadsH4DP.SetTitle("DP L2 quad pattern, DP trigger")
 hquadsH4DP.Draw()
 trigsDP = hquadsH4DP.Integral()
+dpFires_DP = 0.0
+for quadpattern in l2_quadpatterns:
+    dpFires_DP += hquadsH4DP.GetBinContent(quadpattern+1)
+print dpFires_DP
+print dpFires_DP/trigsDP
 c.cd(4)
 gPad.SetLogy(1)
 hquadsH4NIM3 = htrig.ProjectionY("quadsH4NIM3",129,129)
 hquadsH4NIM3.SetTitle("DP L2 quad pattern, NIM3 trigger")
 hquadsH4NIM3.Draw()
 trigsNIM3 = hquadsH4NIM3.Integral()
+dpFires_NIM3 = 0.0
+for quadpattern in l2_quadpatterns:
+    dpFires_NIM3 += hquadsH4NIM3.GetBinContent(quadpattern+1)
+print dpFires_NIM3
+print dpFires_NIM3/trigsNIM3
 c.cd()
 c.Print(outfilename+".pdf");
 
