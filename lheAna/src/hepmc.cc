@@ -15,15 +15,14 @@ using namespace std;
 #include <TFile.h>
 #include <TTree.h>
 
-#include "HepMC3/GenEvent.h"
-#include "HepMC3/GenParticle.h"
-#include "HepMC3/GenVertex.h"
-#include "HepMC3/WriterAscii.h"
-#include "HepMC3/ReaderAscii.h"
-#include "HepMC3/WriterRootTree.h"
+#include "HepMC/GenEvent.h"
+#include "HepMC/GenParticle.h"
+#include "HepMC/GenVertex.h"
+#include "HepMC/IO_AsciiParticles.h"
+//#include "HepMC/WriterRootTree.h"
+#include "HepMC/IO_GenEvent.h"
 
-
-using namespace HepMC3;
+using namespace HepMC;
 
 
 struct stdhep_entry {
@@ -252,24 +251,30 @@ int main(int argc,char** argv)
 
     nevhep = 1;
     int n_accepted_events = 0;
-
+    printf("//////////////////////////////////////////// FLAG 1 ///////////////////////////////////\n");
     while (true) {
+
+      printf("///////////////////////////////////////// FLAG 3 ////////////////////////////////////\n");
         char line[1000];
         bool found_event = false;
+	printf("/////////////////////////////////////////// FLAG 7 /////////////////////////////////////////\n");
         while (fgets(line,1000,in_file)!=NULL) {
+	  printf("////////////////////////////////////// FLAG 4 ////////////////////////////////////////\n");
             if (strstr(line,"<event")!=NULL) {
+	      printf("///////////////////////////////////////// FLAG 5 ////////////////////////////////////////////\n");
                 found_event = true;
                 break;
             }
         }
         if (!found_event) {
+	  printf("////////////////////////////////////////////// FLAG 6 ////////////////////////////////////////////\n");
             fclose(in_file);
             break;
         }
 
         int nup, idprup; //number of particles, process ID
         double xwgtup; //event weight
-
+	printf("//////////////////////////////////// FLAG 2 /////////////////////////////////////\n");
         struct stdhep_event temp_event = (struct stdhep_event) {0,0,0};
         while (true) {
             struct stdhep_entry *temp = new struct stdhep_entry;
@@ -319,8 +324,8 @@ int main(int argc,char** argv)
     //printf("postrack %d %f %f %f %f %f\n",postrack->idhep,postrack->phep[0],postrack->phep[1],postrack->phep[2],postrack->phep[3],postrack->phep[4]);
 
     // writing HepMC file
-    shared_ptr<GenRunInfo> runinfo = make_shared<GenRunInfo>();
-    WriterAscii output("output.dat", runinfo);
+    //shared_ptr<GenRunInfo> runinfo = make_shared<GenRunInfo>();
+    IO_GenEvent IO_GenEvent("output.dat");
 
     int n_extra_repeats = 0;
     do {
@@ -401,7 +406,7 @@ int main(int argc,char** argv)
                     save->Fill();
 
 		// create HepMC evt
-		GenEvent *evt = new GenEvent(Units::GEV, Units::MM);
+		GenEvent* evt = new GenEvent(Units::GEV, Units::MM);
 		evt->set_event_number(n_accepted_events);
 
 		// create A' particle
@@ -423,37 +428,37 @@ int main(int argc,char** argv)
 		vaprime->add_particle_in( paprime ); 
 		vaprime->add_particle_out( ppostrack );
 		vaprime->add_particle_out( pnegtrack );
-		output.write_event(*evt);
+		IO_GenEvent.write_event(evt);
 
             }
         }
         n_extra_repeats++;
     } while (n_accepted_events>0 && n_accepted_events<10);//if we get any events, run until we have 10 good events
     printf("%d events accepted by cuts after %dx%d samples of %d events\n",n_accepted_events,n_repeat,n_extra_repeats,input_events.size());
-    output.close();
+    //IO_GenEvent.close();
 
     save->Write();
     saveFile->Write();
     saveFile->Close();
 
-    ReaderAscii input("output.dat");
-    WriterRootTree  root_output("output.root");
-    int events_parsed = 0;
-    while( !text_input.failed() ) {
-      GenEvent evt(Units::GEV,Units::MM);
-      text_input.read_event(evt);
-      if( text_input.failed() ) break;
-      if( events_parsed == 0 ) {
-	cout << "First event: " << endl;
-	Print::listing(evt);
-      }
-      root_output.write_event(evt);
-      ++events_parsed;
-
-      if( events_parsed%1000 == 0 ) {
-	cout << "Event: " << events_parsed << endl;
-      }
-    }
+    //ReaderAscii input("output.dat");
+    //WriterRootTree  root_output("output.root");
+    //int events_parsed = 0;
+    //while( !text_input.failed() ) {
+    //GenEvent evt(Units::GEV,Units::MM);
+    //text_input.read_event(evt);
+    //if( text_input.failed() ) break;
+    //if( events_parsed == 0 ) {
+    //	cout << "First event: " << endl;
+    //	Print::listing(evt);
+    //}
+    //root_output.write_event(evt);
+    //++events_parsed;
+    //
+    //if( events_parsed%1000 == 0 ) {
+    //	cout << "Event: " << events_parsed << endl;
+    //}
+    //}
 
 }
 

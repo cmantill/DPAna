@@ -3,7 +3,7 @@ ROOTCFLAGS = `root-config --cflags`
 
 BIN := ../bin
 SRC_DIR := ../src
-LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/afs/cern.ch/user/c/cmantill/work/public/tmp/lhe/hepmc3-install/lib64/ -lHepMC3  -I/afs/cern.ch/user/c/cmantill/work/public/tmp/lhe/hepmc3-install/include/
+LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/seaquest/users/dylrus/WorkingRepo/hepmc/hepmc2-install/lib64/ -lHepMC  -I/seaquest/users/dylrus/WorkingRepo/hepmc/hepmc2-install/include/
 INCFILES=-I$(SRC_DIR)
 CPP=g++
 CPPFLAGS=$(LDLIBS) $(ROOTCFLAGS) -g
