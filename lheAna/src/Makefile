@@ -3,7 +3,7 @@ ROOTCFLAGS = `root-config --cflags`
 
 BIN := ../bin
 SRC_DIR := ../src
-LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas
+LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/afs/cern.ch/user/c/cmantill/work/public/tmp/lhe/hepmc3-install/lib64/ -lHepMC3  -I/afs/cern.ch/user/c/cmantill/work/public/tmp/lhe/hepmc3-install/include/
 INCFILES=-I$(SRC_DIR)
 CPP=g++
 CPPFLAGS=$(LDLIBS) $(ROOTCFLAGS) -g
@@ -13,7 +13,7 @@ UTIL_OBJ := $(UTIL_SRC:.cpp=.o)
 
 all: $(TARGETS) $(UTIL_OBJ)
 $(BIN)/%: $(SRC_DIR)/%.cc $(UTIL_OBJ)
-	$(CPP) $< $(UTIL_OBJ) $(CPPFLAGS) $(INCFILES) -o $@
+	$(CPP) $< $(UTIL_OBJ) $(CPPFLAGS) $(INCFILES) -o $@ 
 $(SRC_DIR)/%.o: $(SRC_DIR)/%.cpp $(SRC_DIR)/%.hh
 	$(CPP) $< -c $(INCFILES) -g -o $@
 clean:
