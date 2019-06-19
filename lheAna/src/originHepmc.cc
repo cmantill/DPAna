@@ -363,32 +363,6 @@ int main(int argc,char** argv)
               double vx[3]; //vertex position
               for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production[j];
   
-
-	        // positive track //
-	        //pz1 = event->postrack->phep[2]; 
-	        //ty1 = event->postrack->phep[1]/event->postrack->phep[2];  // y/z angle = py/pz
-                //tx1_st1 = (event->postrack->phep[0]+fmag_kick)/event->postrack->phep[2]; // x/z angle = px+kmag/pz 
-                //tx1 = (event->postrack->phep[0]+fmag_kick+kmag_kick)/event->postrack->phep[2]; // x/z angle = px+fmag+kmag/pz
-                //y1 = vx[1] - vx[2]*ty1;//extrapolate to z=0 
-                //double tx1_dump = postrack->phep[0]/postrack->phep[2]; //
-                //double x1_fmag = vx[0] + (fmag_center-vx[2])*tx1_dump; //
-                //x1_st1 = vx[0] + (fmag_center-vx[2])*(event->postrack->phep[0]/event->postrack->phep[2]) - fmag_center*tx1_st1;
-                //double x1_kmag = x1_st1 + kmag_center*tx1_st1; //
-                //x1 = vx[0] + x1_st1 + kmag_center*tx1_st1 - kmag_center*tx1;
-
-		// negative track //
-                //pz2 = event->negtrack->phep[2];
-                //ty2 = event->negtrack->phep[1]/event->negtrack->phep[2];
-                //tx2_st1 = (event->negtrack->phep[0]-fmag_kick)/event->negtrack->phep[2];
-                //tx2 = (event->negtrack->phep[0]-fmag_kick-kmag_kick)/event->negtrack->phep[2];
-                //ty2 = negtrack->phep[1]/negtrack->phep[2]; //
-                //y2 = vx[1] - vx[2]*ty2;//extrapolate to z=0
-                //double tx2_dump = negtrack->phep[0]/negtrack->phep[2]; //
-                //double x2_fmag = vx[0] + (fmag_center-vx[2])/tx1_dump; //
-                //x2_st1 = vx[0] + (fmag_center-vx[2])*(event->negtrack->phep[0]/event->negtrack->phep[2]) - fmag_center*tx2_st1;
-                //double x2_kmag = x1_st1 + kmag_center*tx1_st1; //
-                //x2 = vx[0] + x2_st1 + kmag_center*tx2_st1 - kmag_center*tx2;
-
                 n_accepted_events++;
                 if (write_tree)
                     save->Fill();
@@ -400,12 +374,12 @@ int main(int argc,char** argv)
 		// create A' particle
 		GenParticle* paprime = new GenParticle( FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
 		// create postrack particle
-		double z1; z1 = vx[2];
-		double t1; t1 = sqrt(x1*x1 + y1*y1 + z1*z1 + event->postrack->phep[4]*event->postrack->phep[4]);
+		
+		
                 GenParticle* ppostrack = new GenParticle( FourVector(px1, py1, pz1, event->postrack->phep[4]), event->postrack->idhep, event->postrack->isthep);
                 // create negtrack particle
-                double z2; z2 = vx[2];
-                double t2; t2 = sqrt(x2*x2 + y2*y2 + z2*z2 + event->negtrack->phep[4]*event->negtrack->phep[4]);
+                
+                
                 GenParticle* pnegtrack = new GenParticle( FourVector(px2, py2, pz2, event->negtrack->phep[4]), event->negtrack->idhep, event->negtrack->isthep);
 
 		// create A' vertex
