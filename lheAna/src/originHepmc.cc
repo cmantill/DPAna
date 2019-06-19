@@ -399,11 +399,11 @@ int main(int argc,char** argv)
 		std::cout << ss0.str().c_str();
                 outputFile << ss0.str();
 
-		std::stringstream ss1; ss1<<setw(15)<<left<<n_accepted_events<<setw(15)<<left<<event->postrack->idhep<<setw(15)<<left<<x1<< setw(15)<<left<<y1<<setw(15)<<left<<z1<<setw(15)<<left<<t1<<"\n";
+		std::stringstream ss1; ss1<<setw(15)<<left<<n_accepted_events<<setw(15)<<left<<event->postrack->idhep<<setw(15)<<left<<px1<< setw(15)<<left<<py1<<setw(15)<<left<<pz1<<setw(15)<<left<<event->postrack->phep[4]<<"\n";
 		std::cout << ss1.str().c_str();
 		outputFile << ss1.str();
 	       
-		std::stringstream ss2; ss2<<setw(15)<<left<<n_accepted_events<<setw(15)<<left<<event->negtrack->idhep<<setw(15)<<left<<x2<< setw(15)<<left<<y2<<setw(15)<<left<<z2<<setw(15)<<left<<t2<<"\n";
+		std::stringstream ss2; ss2<<setw(15)<<left<<n_accepted_events<<setw(15)<<left<<event->negtrack->idhep<<setw(15)<<left<<px2<< setw(15)<<left<<py2<<setw(15)<<left<<pz2<<setw(15)<<left<<event->negtrack->phep[4]<<"\n";
 		std::cout << ss2.str().c_str();
                 outputFile << ss2.str();
 		//outputFile.close();
