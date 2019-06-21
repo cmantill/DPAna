@@ -426,6 +426,7 @@ int main(int argc,char** argv)
 		posVec->setZ(z1);
 		posVec->setT(t1);
                 GenParticle* ppostrack = new GenParticle( posVec, event->postrack->idhep, event->postrack->isthep);
+		ppostrack->set_status(1);
                 // create negtrack particle
                 double z2; z2 = vx[2];
                 double t2; t2 = sqrt(x2*x2 + y2*y2 + z2*z2 + event->negtrack->phep[4]*event->negtrack->phep[4]);
@@ -436,7 +437,7 @@ int main(int argc,char** argv)
                 negVec->setT(t2);
 
                 GenParticle* pnegtrack = new GenParticle( negVec, event->negtrack->idhep, event->negtrack->isthep);
-
+		pnegtrack->set_status(1);
 		// create A' vertex
 		// need to know where the vertex is (vx)
 		vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);

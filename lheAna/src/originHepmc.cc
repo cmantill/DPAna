@@ -376,11 +376,11 @@ int main(int argc,char** argv)
 		// create postrack particle
 		
 		
-                GenParticle* ppostrack = new GenParticle( FourVector(px1, py1, pz1, event->postrack->phep[4]), event->postrack->idhep, event->postrack->isthep);
+                GenParticle* ppostrack = new GenParticle( FourVector(px1, py1, pz1, event->postrack->phep[3]), event->postrack->idhep, event->postrack->isthep);
                 // create negtrack particle
                 
                 
-                GenParticle* pnegtrack = new GenParticle( FourVector(px2, py2, pz2, event->negtrack->phep[4]), event->negtrack->idhep, event->negtrack->isthep);
+                GenParticle* pnegtrack = new GenParticle( FourVector(px2, py2, pz2, event->negtrack->phep[3]), event->negtrack->idhep, event->negtrack->isthep);
 
 		// create A' vertex
 		// need to know where the vertex is (vx)
