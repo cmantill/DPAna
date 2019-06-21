@@ -349,65 +349,21 @@ int main(int argc,char** argv)
             py0 = event->aprime->phep[1];
             pz0 = event->aprime->phep[2];
 
-            for (int i=0;i<n_repeat;i++) {
-                double vtx_displacement = gsl_ran_exponential(r,decay_length);
+            double px1 = event->postrack->phep[0];
+            double py1 = event->postrack->phep[1];
+            double pz1 = event->postrack->phep[2];
+	    double pt1 = event->postrack->phep[3];
+
+            double px2 = event->negtrack->phep[0];
+            double py2 = event->negtrack->phep[1];
+            double pz2 = event->negtrack->phep[2];
+	    double pt2 = event->negtrack->phep[3];
+
+        
+	    double vtx_displacement = 0;//gsl_ran_exponential(r,decay_length);
 
                 double vx[3]; //vertex position
                 for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production[j];
-                if (vx[2]<min_vz || vx[2]>max_vz) continue;
-
-                //printf("%f, %f, %f, %f, %f, %f, %f\n",decay_length, vtx_displacement, p, vx[0], vx[1], vx[2], aprime->phep[2]);
-
-		// defin fmag kick
-                double fmag_kick, kmag_kick;
-                double fmag_center, kmag_center;
-                if (vx[2]>fmag_maxz) {
-                    fmag_kick = 0.0;
-                    fmag_center = 0.0;
-                } else if (vx[2]>fmag_minz) {
-                    fmag_kick = fmag_maxkick*(fmag_maxz-vx[2])/(fmag_maxz-fmag_minz);
-                    fmag_center = (fmag_maxz+vx[2])/2.0;
-                } else {
-                    fmag_kick = fmag_maxkick;
-                    fmag_center = (fmag_maxz+fmag_minz)/2.0;
-                }
-
-                if (vx[2]>kmag_maxz) {
-                    kmag_kick = 0.0;
-                    kmag_center = 0.0;
-                } else if (vx[2]>kmag_minz) {
-                    kmag_kick = kmag_maxkick*(kmag_maxz-vx[2])/(kmag_maxz-kmag_minz);
-                    kmag_center = (kmag_maxz+vx[2])/2.0;
-                } else {
-                    kmag_kick = kmag_maxkick;
-                    kmag_center = (kmag_maxz+kmag_minz)/2.0;
-                }
-
-		// positive track
-                pz1 = event->postrack->phep[2]; 
-                ty1 = event->postrack->phep[1]/event->postrack->phep[2];  // y/z angle = py/pz
-                tx1_st1 = (event->postrack->phep[0]+fmag_kick)/event->postrack->phep[2]; // x/z angle = px+kmag/pz 
-                tx1 = (event->postrack->phep[0]+fmag_kick+kmag_kick)/event->postrack->phep[2]; // x/z angle = px+fmag+kmag/pz
-                y1 = vx[1] - vx[2]*ty1;//extrapolate to z=0 
-                //double tx1_dump = postrack->phep[0]/postrack->phep[2];
-                //double x1_fmag = vx[0] + (fmag_center-vx[2])*tx1_dump;
-                x1_st1 = vx[0] + (fmag_center-vx[2])*(event->postrack->phep[0]/event->postrack->phep[2]) - fmag_center*tx1_st1;
-                //double x1_kmag = x1_st1 + kmag_center*tx1_st1;
-                x1 = vx[0] + x1_st1 + kmag_center*tx1_st1 - kmag_center*tx1;
-
-		// negative track
-                pz2 = event->negtrack->phep[2];
-                ty2 = event->negtrack->phep[1]/event->negtrack->phep[2];
-                tx2_st1 = (event->negtrack->phep[0]-fmag_kick)/event->negtrack->phep[2];
-                tx2 = (event->negtrack->phep[0]-fmag_kick-kmag_kick)/event->negtrack->phep[2];
-                //ty2 = negtrack->phep[1]/negtrack->phep[2];
-                y2 = vx[1] - vx[2]*ty2;//extrapolate to z=0
-                //double tx2_dump = negtrack->phep[0]/negtrack->phep[2];
-                //double x2_fmag = vx[0] + (fmag_center-vx[2])/tx1_dump;
-                x2_st1 = vx[0] + (fmag_center-vx[2])*(event->negtrack->phep[0]/event->negtrack->phep[2]) - fmag_center*tx2_st1;
-                //double x2_kmag = x1_st1 + kmag_center*tx1_st1;
-                x2 = vx[0] + x2_st1 + kmag_center*tx2_st1 - kmag_center*tx2;
-
                 n_accepted_events++;
                 if (write_tree)
                     save->Fill();
@@ -415,28 +371,14 @@ int main(int argc,char** argv)
 		// create HepMC evt
 		GenEvent* evt = new GenEvent(Units::GEV, Units::MM);
 		evt->set_event_number(n_accepted_events);
+
 		// create A' particle
 		GenParticle* paprime = new GenParticle( FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
 		// create postrack particle
-		double z1; z1 = vx[2];
-		double t1; t1 = sqrt(x1*x1 + y1*y1 + z1*z1 + event->postrack->phep[4]*event->postrack->phep[4]);
-		FourVector* posVec = new FourVector();
-		posVec->setX(x1);
-		posVec->setY(y1);
-		posVec->setZ(z1);
-		posVec->setT(t1);
-                GenParticle* ppostrack = new GenParticle( posVec, event->postrack->idhep, event->postrack->isthep);
+                GenParticle* ppostrack = new GenParticle( FourVector(px1, py1, pz1, pt1), event->postrack->idhep, event->postrack->isthep);
 		ppostrack->set_status(1);
                 // create negtrack particle
-                double z2; z2 = vx[2];
-                double t2; t2 = sqrt(x2*x2 + y2*y2 + z2*z2 + event->negtrack->phep[4]*event->negtrack->phep[4]);
-		FourVector* negVec = new FourVector();
-                negVec->setX(x2);
-                negVec->setY(y2);
-                negVec->setZ(z2);
-                negVec->setT(t2);
-
-                GenParticle* pnegtrack = new GenParticle( negVec, event->negtrack->idhep, event->negtrack->isthep);
+                GenParticle* pnegtrack = new GenParticle( FourVector(px2, py2, pz2, pt2), event->negtrack->idhep, event->negtrack->isthep);
 		pnegtrack->set_status(1);
 		// create A' vertex
 		// need to know where the vertex is (vx)
@@ -447,24 +389,13 @@ int main(int argc,char** argv)
 		vaprime->add_particle_out( ppostrack );
 		vaprime->add_particle_out( pnegtrack );
 		IO_GenEvent.write_event(evt);
-		
+		printf("%d \n",n_accepted_events);
 		//printf("Event: %d \n Vertex: %f %f %f %f \n FourVector A': %f %f %f %f \n",n_accepted_events,vx[0],vx[1],vx[2],vx[3],px0,py0,pz0,event->aprime->phep[3]);
 		//printf("FourVector Pos: %f %f %f %f \n",x1,y1,z1,t1);
 		//printf("FourVector Neg: %f %f %f %f \n",x2,y2,z2,t2);
-		std::stringstream ss0; ss0<<setw(15)<<left<<n_accepted_events<<setw(15)<<left<<event->aprime->idhep<<setw(15)<<left<<px0<< setw(15)<<left<<py0<<setw(15)<<left<<pz0<<setw(15)<<left<<event->aprime->phep[3]<<"\n";
-		std::cout << ss0.str().c_str();
-                outputFile << ss0.str();
-
-		std::stringstream ss1; ss1<<setw(15)<<left<<n_accepted_events<<setw(15)<<left<<event->postrack->idhep<<setw(15)<<left<<x1<< setw(15)<<left<<y1<<setw(15)<<left<<z1<<setw(15)<<left<<t1<<"\n";
-		std::cout << ss1.str().c_str();
-		outputFile << ss1.str();
-	       
-		std::stringstream ss2; ss2<<setw(15)<<left<<n_accepted_events<<setw(15)<<left<<event->negtrack->idhep<<setw(15)<<left<<x2<< setw(15)<<left<<y2<<setw(15)<<left<<z2<<setw(15)<<left<<t2<<"\n";
-		std::cout << ss2.str().c_str();
-                outputFile << ss2.str();
 		//outputFile.close();
 		  
-            }
+            
         }
         n_extra_repeats++;
     } while (n_accepted_events>0 && n_accepted_events<10);//if we get any events, run until we have 10 good events
