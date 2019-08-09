@@ -103,9 +103,9 @@ int main(int argc,char** argv)
 
     //double decay_length = -1.0;
     double eps = 1e-6;
-
+    string mech = "";
     int n_repeat = 100; //number of times to sample the decay distribution for each input event
-    double vx_production[3] = {0.0, 2.0, 50.0};//beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
+    double vx_production[3] = {0.0, 0.0, 0.0};//beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     double min_vz = 300.0;
     double max_vz = 800.0;
 
@@ -123,10 +123,10 @@ int main(int argc,char** argv)
     bool cut_on_acceptance_tracking = false;
     bool cut_on_acceptance_trigger = false;
     bool write_tree = true;
-
+    std::stringstream stream;
     int c;
-
-    while ((c = getopt(argc,argv,"hs:n:e:E:m:z:Z:cCw")) !=-1)
+    string epsStr = "";
+    while ((c = getopt(argc,argv,"hs:n:e:E:m:z:Z:BbcCw")) !=-1)
         switch (c)
         {
             case 'h':
@@ -146,6 +146,8 @@ int main(int argc,char** argv)
                 break;
             case 'E':
                 eps = pow(10.0,atof(optarg));
+		stream << std::fixed << std::setprecision(2) << atof(optarg);
+		epsStr = stream.str();
                 break;
             case 'm':
                 mass = atof(optarg);
@@ -156,6 +158,13 @@ int main(int argc,char** argv)
             case 'Z':
                 max_vz = atof(optarg);
                 break;
+	    case 'B':
+	        mech = "Brem";
+	        break;
+	    case 'b':
+	        mech =  "Eta";
+	        break;
+	  
             case 'c':
                 cut_on_acceptance_tracking = true;
                 break;
@@ -331,11 +340,17 @@ int main(int argc,char** argv)
 
     // writing HepMC file
     //shared_ptr<GenRunInfo> runinfo = make_shared<GenRunInfo>();
-    IO_GenEvent IO_GenEvent("output.dat");
+    stream.str("");
+    stream << std::fixed << std::setprecision(2) << mass;
+    std::string massStr = stream.str();
+
+    string outFile = "displacedEvents/"+mech+"_"+massStr+"_z"+std::to_string((int)min_vz)+"_"+std::to_string((int)max_vz)+"_eps_"+epsStr+".txt";
+    IO_GenEvent IO_GenEvent(outFile);
     ofstream outputFile("graphData.txt");
     //outputFile.open("graphData.txt",fstream::app);
     int n_extra_repeats = 0;
     do {
+      
         for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
             double gamma, beta;
             gamma = event->aprime->phep[3]/event->aprime->phep[4];
@@ -349,89 +364,48 @@ int main(int argc,char** argv)
             py0 = event->aprime->phep[1];
             pz0 = event->aprime->phep[2];
 
+           double px1 = event->postrack->phep[0];
+           double py1 = event->postrack->phep[1];
+           double pz1 = event->postrack->phep[2];
+	   double pt1 = event->postrack->phep[3];
+
+           double px2 = event->negtrack->phep[0];
+           double py2 = event->negtrack->phep[1];
+           double pz2 = event->negtrack->phep[2];
+	   double pt2 = event->negtrack->phep[3];
+
             for (int i=0;i<n_repeat;i++) {
-                double vtx_displacement = gsl_ran_exponential(r,decay_length);
-
-                double vx[3]; //vertex position
+	     
+	      double vx[3];
+	      
+	      double vtx_displacement = gsl_ran_exponential(r,decay_length);
+	      
                 for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production[j];
-                if (vx[2]<min_vz || vx[2]>max_vz) continue;
-
-		double fmag_kick, kmag_kick;
-                double fmag_center, kmag_center;
-                if (vx[2]>fmag_maxz) {
-		  fmag_kick = 0.0;
-		  fmag_center = 0.0;
-                } else if (vx[2]>fmag_minz) {
-		  fmag_kick = fmag_maxkick*(fmag_maxz-vx[2])/(fmag_maxz-fmag_minz);
-		  fmag_center = (fmag_maxz+vx[2])/2.0;
-                } else {
-		  fmag_kick = fmag_maxkick;
-		  fmag_center = (fmag_maxz+fmag_minz)/2.0;
-                }
-
-                if (vx[2]>kmag_maxz) {
-		  kmag_kick = 0.0;
-		  kmag_center = 0.0;
-                } else if (vx[2]>kmag_minz) {
-		  kmag_kick = kmag_maxkick*(kmag_maxz-vx[2])/(kmag_maxz-kmag_minz);
-		  kmag_center = (kmag_maxz+vx[2])/2.0;
-                } else {
-		  kmag_kick = kmag_maxkick;
-		  kmag_center = (kmag_maxz+kmag_minz)/2.0;
-                }
-
-                // positive track
-                pz1 = event->postrack->phep[2];
-                ty1 = event->postrack->phep[1]/event->postrack->phep[2];  // y/z angle = py/pz
-                tx1_st1 = (event->postrack->phep[0]+fmag_kick)/event->postrack->phep[2]; // x/z angle = px+kmag/pz
-                tx1 = (event->postrack->phep[0]+fmag_kick+kmag_kick)/event->postrack->phep[2]; // x/z angle = px+fmag+kmag/pz
-                y1 = vx[1] - vx[2]*ty1;//extrapolate to z=0
-                //double tx1_dump = postrack->phep[0]/postrack->phep[2];
-                //double x1_fmag = vx[0] + (fmag_center-vx[2])*tx1_dump;
-                x1_st1 = vx[0] + (fmag_center-vx[2])*(event->postrack->phep[0]/event->postrack->phep[2]) - fmag_center*tx1_st1;
-                //double x1_kmag = x1_st1 + kmag_center*tx1_st1;
-                x1 = vx[0] + x1_st1 + kmag_center*tx1_st1 - kmag_center*tx1;
-
-                // negative track
-                pz2 = event->negtrack->phep[2];
-                ty2 = event->negtrack->phep[1]/event->negtrack->phep[2];
-                tx2_st1 = (event->negtrack->phep[0]-fmag_kick)/event->negtrack->phep[2];
-                tx2 = (event->negtrack->phep[0]-fmag_kick-kmag_kick)/event->negtrack->phep[2];
-                //ty2 = negtrack->phep[1]/negtrack->phep[2];
-                y2 = vx[1] - vx[2]*ty2;//extrapolate to z=0
-                //double tx2_dump = negtrack->phep[0]/negtrack->phep[2];
-                //double x2_fmag = vx[0] + (fmag_center-vx[2])/tx1_dump;
-                x2_st1 = vx[0] + (fmag_center-vx[2])*(event->negtrack->phep[0]/event->negtrack->phep[2]) - fmag_center*tx2_st1;
-                //double x2_kmag = x1_st1 + kmag_center*tx1_st1;
-                x2 = vx[0] + x2_st1 + kmag_center*tx2_st1 - kmag_center*tx2;
+		if (vx[2]<min_vz || vx[2]>max_vz) continue;
 
                 n_accepted_events++;
                 if (write_tree)
 		  save->Fill();
 
                 // create HepMC evt
-                GenEvent* evt = new GenEvent(Units::GEV, Units::MM);
+                GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
                 evt->set_event_number(n_accepted_events);
                 // create A' particle
                 GenParticle* paprime = new GenParticle( FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
                 // create postrack particle
-                double z1; z1 = vx[2];
-                double t1; t1 = sqrt(x1*x1 + y1*y1 + z1*z1 + event->postrack->phep[4]*event->postrack->phep[4]);
                 FourVector* posVec = new FourVector();
-                posVec->setX(x1);
-                posVec->setY(y1);
-                posVec->setZ(z1);
-                posVec->setT(t1);
+                posVec->setX(px1);
+                posVec->setY(py1);
+                posVec->setZ(pz1);
+                posVec->setT(pt1);
                 GenParticle* ppostrack = new GenParticle( posVec, event->postrack->idhep, event->postrack->isthep);
                 ppostrack->set_status(1);
                 // create negtrack particle
-                double z2; z2 = vx[2];
-                double t2; t2 = sqrt(x2*x2 + y2*y2 + z2*z2 + event->negtrack->phep[4]*event->negtrack->phep[4]);
                 FourVector* negVec = new FourVector();
-                negVec->setX(x2);
-                negVec->setY(y2);
-                negVec->setZ(z2);
-                negVec->setT(t2);
+                negVec->setX(px2);
+                negVec->setY(py2);
+                negVec->setZ(pz2);
+                negVec->setT(pt2);
 
                 GenParticle* pnegtrack = new GenParticle( negVec, event->negtrack->idhep, event->negtrack->isthep);
                 pnegtrack->set_status(1);
@@ -448,7 +422,7 @@ int main(int argc,char** argv)
             }
         }
         n_extra_repeats++;
-    } while (n_accepted_events>0 && n_accepted_events<10);//if we get any events, run until we have 10 good events
+    } while (n_accepted_events<10000 and n_extra_repeats <= 10000);//Go for 10k events, stop if it has to repeat more than 2000 times.
     printf("%d events accepted by cuts after %dx%d samples of %d events\n",n_accepted_events,n_repeat,n_extra_repeats,input_events.size());
     //IO_GenEvent.close();
 
